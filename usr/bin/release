@@ -93,3 +93,8 @@ run!("git", "push", "origin", version)
 run!("gh", "release", "create", version, "--generate-notes")
 puts "published @amkisko/json-logging #{version} to npmjs"
 puts "JSR publish runs from .github/workflows/publish-jsr.yml on this tag (OIDC provenance)"
+if ENV["JSR_TOKEN"] && !ENV["JSR_TOKEN"].strip.empty?
+  run!(File.join(root, "usr/bin/sync-jsr-settings"))
+else
+  puts "skip JSR description sync (set JSR_TOKEN to sync package.json description)"
+end

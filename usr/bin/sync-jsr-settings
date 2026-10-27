@@ -1,0 +1,50 @@
+#!/usr/bin/env ruby
+# Sync JSR package description from package.json via the management API.
+# Auth: JSR_TOKEN (Bearer personal access token with scope membership).
+# Optional: DRY_RUN=1 prints the request body without calling the API.
+require "json"
+require "net/http"
+require "uri"
+
+root = File.expand_path("../..", __dir__)
+Dir.chdir(root)
+
+package = JSON.parse(File.read("package.json"))
+name = package.fetch("name")
+description = package.fetch("description")
+abort "package.json description is empty" if description.nil? || description.strip.empty?
+abort "package description exceeds 250 characters" if description.length > 250
+
+scope, package_name = name.delete_prefix("@").split("/", 2)
+abort "unexpected package name: #{name}" if scope.nil? || package_name.nil? || package_name.empty?
+
+body = { "description" => description }
+if ENV["DRY_RUN"] == "1"
+  puts "DRY_RUN PATCH /scopes/#{scope}/packages/#{package_name}"
+  puts JSON.pretty_generate(body)
+  exit
+end
+
+token = ENV["JSR_TOKEN"]
+abort "set JSR_TOKEN to a JSR personal access token" if token.nil? || token.strip.empty?
+
+uri = URI("https://api.jsr.io/scopes/#{scope}/packages/#{package_name}")
+request = Net::HTTP::Patch.new(uri)
+request["Authorization"] = "Bearer #{token}"
+request["Content-Type"] = "application/json"
+request["Accept"] = "application/json"
+request["User-Agent"] = "json-logging-sync-jsr-settings/1.0; https://github.com/amkisko/json-logging.ts"
+request.body = JSON.generate(body)
+
+response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true) do |http|
+  http.request(request)
+end
+
+unless response.is_a?(Net::HTTPSuccess)
+  warn "JSR settings sync failed: #{response.code} #{response.message}"
+  warn response.body
+  exit 1
+end
+
+updated = JSON.parse(response.body)
+puts "JSR description set for @#{scope}/#{package_name}: #{updated["description"].inspect}"

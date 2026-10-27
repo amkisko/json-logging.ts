@@ -19,10 +19,12 @@ export const SENSITIVE_KEY_PATTERN =
 const FILTERED = "[FILTERED]";
 const CIRCULAR = "[Circular]";
 
+/** True when a key name matches {@link SENSITIVE_KEY_PATTERN}. */
 export function isSensitiveKey(key: string): boolean {
   return SENSITIVE_KEY_PATTERN.test(key);
 }
 
+/** Strip control characters and truncate to {@link MAX_STRING_LENGTH}. */
 export function sanitizeString(value: string): string {
   try {
     let result = value.replace(CONTROL_CHARS, "");
@@ -35,6 +37,7 @@ export function sanitizeString(value: string): string {
   }
 }
 
+/** Coerce tags to non-empty sanitized strings, dropping nullish entries. */
 export function prepareTags(tags: readonly unknown[]): string[] {
   const prepared: string[] = [];
   for (const tag of tags) {
@@ -49,6 +52,7 @@ export function prepareTags(tags: readonly unknown[]): string[] {
   return prepared;
 }
 
+/** Shape an Error under an `error` key for log payloads (name, message, stack, cause). */
 export function sanitizeError(error: Error): { [key: string]: JsonValue } {
   try {
     const body: { [key: string]: JsonValue } = {
@@ -150,6 +154,7 @@ function sanitizeObject(
   return result;
 }
 
+/** Sanitize a plain object: filter sensitive keys, bound depth/size, mark cycles. */
 export function sanitizeHash(hash: Record<string, unknown>, depth = 0): Record<string, unknown> {
   try {
     if (depth > MAX_DEPTH) {

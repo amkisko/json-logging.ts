@@ -3,10 +3,12 @@ import type { Logger } from "./logger.js";
 import { sanitizeError, sanitizeString } from "./sanitize.js";
 import type { LoggerOptions } from "./types.js";
 
+/** Headers-like object with a `get` method (Fetch `Headers`, etc.). */
 export type HeaderBag = {
   get(name: string): string | null;
 };
 
+/** Request fields used to build ambient HTTP context. */
 export type HttpRequestInput = {
   method?: string;
   url?: string;
@@ -15,9 +17,13 @@ export type HttpRequestInput = {
   requestId?: string;
 };
 
+/** Options for {@link withHttpContext} and framework adapters. */
 export type WithHttpContextOptions = {
+  /** Header name for inbound request id. Default `x-request-id`. */
   headerName?: string;
+  /** Explicit logger; otherwise ambient or a new logger from loggerOptions. */
   logger?: Logger;
+  /** Used when creating a logger if none is bound. */
   loggerOptions?: LoggerOptions;
   /** Optional allowlisted fields merged under http fields (http fields win). */
   extra?: Record<string, unknown>;
@@ -30,6 +36,7 @@ export type WithHttpContextOptions = {
   logCompletion?: boolean;
 };
 
+/** Fields for {@link logRequestCompletion}. */
 export type RequestCompletionFields = {
   method?: string;
   path?: string;
@@ -43,11 +50,13 @@ export const REQUEST_ID_PATTERN = /^[\w.\-:]{1,128}$/;
 
 let fallbackCounter = 0;
 
+/** Monotonic fallback request id when crypto UUID is unavailable. */
 export function fallbackRequestId(now: () => number = Date.now): string {
   fallbackCounter += 1;
   return `req_${now().toString(36)}_${fallbackCounter.toString(36)}`;
 }
 
+/** Prefer `crypto.randomUUID`, else {@link fallbackRequestId}. */
 export function defaultRandomId(randomUUID?: (() => string) | null): string {
   const resolved =
     randomUUID === undefined ? globalThis.crypto?.randomUUID?.bind(globalThis.crypto) : randomUUID;
@@ -57,10 +66,12 @@ export function defaultRandomId(randomUUID?: (() => string) | null): string {
   return fallbackRequestId();
 }
 
+/** True when `value` matches {@link REQUEST_ID_PATTERN}. */
 export function isValidRequestId(value: string): boolean {
   return REQUEST_ID_PATTERN.test(value);
 }
 
+/** Keep a valid inbound id, otherwise allocate a new one. */
 export function allocateRequestId(
   existing: string | null | undefined,
   randomId: () => string = defaultRandomId
@@ -75,6 +86,7 @@ export function allocateRequestId(
   }
 }
 
+/** Pathname from an absolute or relative URL string. */
 export function requestPathFromUrl(url: string): string | undefined {
   if (url.length === 0) {
     return undefined;
@@ -118,6 +130,7 @@ function headerGet(
   return typeof direct === "string" ? direct : null;
 }
 
+/** Pick named keys from a bag; missing keys are omitted. */
 export function pickContextKeys(
   bag: Record<string, unknown> | undefined,
   keys: readonly string[] | undefined
@@ -134,6 +147,7 @@ export function pickContextKeys(
   return out;
 }
 
+/** Build requestId / method / path fields from {@link HttpRequestInput}. */
 export function httpFieldsFrom(
   input: HttpRequestInput,
   headerName = "x-request-id"
@@ -151,6 +165,7 @@ export function httpFieldsFrom(
   return fields;
 }
 
+/** Copy allowlisted header names into a sanitized string map. */
 export function pickAllowlistedHeaders(
   headers: HeaderBag | Record<string, string | string[] | undefined> | undefined,
   names: readonly string[] | undefined
@@ -198,6 +213,7 @@ export function logRequestCompletion(logger: Logger, fields: RequestCompletionFi
   }
 }
 
+/** Run `fn` under ALS context built from the HTTP request input. */
 export function withHttpContext<T>(
   input: HttpRequestInput,
   fn: () => T | Promise<T>,

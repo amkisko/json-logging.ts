@@ -1,6 +1,6 @@
 {
   "name": "@amkisko/json-logging",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Structured JSON logging with ActiveSupport-style tagged and withContext helpers",
   "type": "module",
   "license": "MIT",

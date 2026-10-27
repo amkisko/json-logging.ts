@@ -40,6 +40,7 @@ export type WithRequestLoggingOptions = {
   loggerOptions?: LoggerOptions;
 };
 
+/** Re-export request-id helpers for Next entrypoint consumers. */
 export { allocateRequestId, defaultRandomId, fallbackRequestId };
 
 /**

@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 0.1.1 (2026-10-27)
+
+- Document remaining public symbols so JSR docs coverage clears the score threshold
+- Sync the JSR package description from `package.json` via `usr/bin/sync-jsr-settings`
+
 ## 0.1.0 (2026-10-27)
 
 - Ship structured JSON logging with `JsonLogging.new` / `createLogger`, severity methods, `tagged`, and `withContext`

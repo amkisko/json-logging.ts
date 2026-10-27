@@ -14,10 +14,13 @@ import { isPlainObject } from "./objects.js";
 import { consoleSinkFrom } from "./sinks.js";
 import type { Level, LoggerOptions, LogMessage } from "./types.js";
 
+/** Options for {@link installConsoleBridge}. */
 export type ConsoleBridgeOptions = {
+  /** Which console methods to patch. Default: log, info, warn, error, debug. */
   methods?: readonly ConsoleMethodName[];
 };
 
+/** Result of {@link installStructuredLogging}: logger plus uninstall handle. */
 export type StructuredLoggingInstall = {
   logger: Logger;
   uninstall: () => void;
@@ -35,10 +38,12 @@ const LEVEL_BY_METHOD: Record<ConsoleMethodName, Level> = {
 
 let installedMethods: ConsoleMethodName[] | null = null;
 
+/** True when console methods are currently routed through a logger. */
 export function isConsoleBridgeInstalled(): boolean {
   return getBridgeOriginals() !== null;
 }
 
+/** Restore original console methods if a bridge was installed. */
 export function uninstallConsoleBridge(): void {
   const originals = getBridgeOriginals();
   if (!originals || !installedMethods) {
@@ -107,6 +112,7 @@ export function installStructuredLogging(
   return { logger, uninstall };
 }
 
+/** Map `console.*` arguments into a {@link LogMessage} for structured emit. */
 export function messageFromConsoleArgs(args: unknown[]): LogMessage {
   if (args.length === 0) {
     return "";

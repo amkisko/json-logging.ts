@@ -21,7 +21,7 @@ Andrei Makarov (@amkisko)
 
 ## Next
 
-- After first publish: set JSR description, mark runtimes per README table, link the GitHub repository for OIDC.
+- Superseded for description and score follow-up by `docs/changelogs/20261027192000_jsr-score-100.md`.
 
 ## Source
 

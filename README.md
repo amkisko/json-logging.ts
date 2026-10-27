@@ -14,7 +14,7 @@ Zero runtime dependencies. Ambient `withContext` / block `tagged` use AsyncLocal
 | Cloudflare Workers | Compatible | Full ALS with `nodejs_compat`. Without it: import and basic logging still work; `withContext` does not retain fields. |
 | Browsers | Compatible | Basic logging and sinks work. Ambient context requires a host that provides ALS (unusual in browsers). |
 
-On the JSR package settings page, mark Node.js, Bun, Deno, Cloudflare Workers, and Browsers as compatible. Set the package description to the same summary as `package.json`.
+On the JSR package settings page, mark Node.js, Bun, Deno, Cloudflare Workers, and Browsers as compatible. Keep the package description aligned with `package.json` (`JSR_TOKEN=... ./usr/bin/sync-jsr-settings`, or set it in the Settings tab).
 
 ## Install
 

@@ -69,6 +69,7 @@ function mergeUserFields(
   return payload;
 }
 
+/** Inputs for {@link buildRecord} on the log hot path. */
 export type BuildLineInput = {
   message: LogMessage;
   level: Level;
@@ -124,6 +125,7 @@ function mergeProviderContext(payload: Record<string, unknown>, provider: Contex
   };
 }
 
+/** Assemble one log record: message, severity, tags, context, serializers, redact. */
 export function buildRecord(input: BuildLineInput): LogRecord {
   const payload: Record<string, unknown> = {};
   if (input.base && Object.keys(input.base).length > 0) {
@@ -226,12 +228,14 @@ function uniqueTags(tags: string[]): string[] {
   return result;
 }
 
+/** Serialize a record to one JSON line with a trailing newline. */
 export function toJsonLine(record: LogRecord): string {
   const seen = new WeakSet<object>();
   const safe = sanitizeValue(record, 0, seen);
   return `${JSON.stringify(safe)}\n`;
 }
 
+/** Never-raise fallback record when the primary emit path throws. */
 export function buildFallbackRecord(
   level: Level,
   message: unknown,
