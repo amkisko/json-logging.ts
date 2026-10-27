@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+set -euo pipefail
+root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)
+cd "$root"
+
+bun examples/bun-entry.ts >/tmp/json-logging-bun-example.out
+grep -q '"message":"app started"' /tmp/json-logging-bun-example.out
+grep -q '"message":"legacy library style log"' /tmp/json-logging-bun-example.out
+grep -q '"tags":\["billing"\]' /tmp/json-logging-bun-example.out
+
+bun -e '
+import { registerStructuredLogging, resetNextExampleForTests } from "./examples/next-instrumentation.ts";
+import { bootRemixLogging, handleRequest, resetRemixExampleForTests } from "./examples/remix-handle-request.ts";
+import { uninstallConsoleBridge } from "./src/console.ts";
+import { resetHttpLoggerForTests } from "./src/http.ts";
+
+function resetAll() {
+  uninstallConsoleBridge();
+  resetHttpLoggerForTests();
+  resetNextExampleForTests();
+  resetRemixExampleForTests();
+}
+
+resetAll();
+registerStructuredLogging();
+resetAll();
+bootRemixLogging();
+const response = await handleRequest(new Request("https://example.test/"), { requestId: "ex-1" });
+if (response.status !== 200) throw new Error("remix example failed");
+resetAll();
+'
+
+printf '%s\n' "example: ok"

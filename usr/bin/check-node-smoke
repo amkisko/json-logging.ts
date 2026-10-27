@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+# Smoke: compiled dist loads and logs under Node (not only Bun).
+set -euo pipefail
+root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)
+cd "$root"
+
+if ! command -v node >/dev/null 2>&1; then
+  printf '%s\n' "node-smoke fail: node not found" >&2
+  exit 1
+fi
+
+bun run build >/dev/null
+
+node --input-type=module <<'JS'
+import { createLogger, withContext, isAsyncLocalStorageAvailable } from "./dist/index.js";
+
+const chunks = [];
+const sink = {
+  write(line) {
+    chunks.push(line);
+  },
+};
+
+if (!isAsyncLocalStorageAvailable()) {
+  throw new Error("node-smoke: AsyncLocalStorage unavailable");
+}
+
+const logger = createLogger({ sink, base: { service: "node-smoke" } });
+await withContext({ requestId: "node-1" }, async () => {
+  logger.info({ event: "ok" });
+});
+
+const joined = chunks.join("");
+if (!joined.includes('"event":"ok"')) {
+  throw new Error(`node-smoke: missing event in output: ${joined}`);
+}
+if (!joined.includes('"requestId":"node-1"')) {
+  throw new Error(`node-smoke: missing requestId in output: ${joined}`);
+}
+if (!joined.includes('"service":"node-smoke"')) {
+  throw new Error(`node-smoke: missing service in output: ${joined}`);
+}
+console.log("node-smoke: ok");
+JS

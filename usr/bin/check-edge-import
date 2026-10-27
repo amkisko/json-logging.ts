@@ -1,0 +1,79 @@
+#!/usr/bin/env bash
+# Fail if Edge-oriented entry modules statically import Node builtins that Edge forbids.
+set -euo pipefail
+root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)
+cd "$root"
+
+python3 - <<'PY'
+from pathlib import Path
+import re
+import sys
+from typing import Optional
+
+ROOT = Path(".")
+# Entrypoints intended for Edge / Workers / Web runtimes.
+ENTRIES = [
+    Path("src/next.ts"),
+    Path("src/remix.ts"),
+    Path("src/hono.ts"),
+    Path("src/http.ts"),
+    Path("src/index.ts"),
+    Path("src/console.ts"),
+]
+
+# Static imports that must not appear in the Edge entry graph.
+FORBIDDEN = re.compile(
+    r"""from\s+["'](node:(?!async_hooks\b)[^"']+|fs|path|os|child_process|net|tls|worker_threads|cluster|http2|dns)["']"""
+)
+# Also reject classic node:async_hooks static import (ALS is soft-loaded).
+FORBIDDEN_ALS = re.compile(r"""from\s+["']node:async_hooks["']""")
+IMPORT_REL = re.compile(r"""from\s+["'](\.[^"']+)["']""")
+
+
+def resolve_import(importer, spec):
+    # type: (Path, str) -> Optional[Path]
+    raw = spec
+    if raw.endswith(".js"):
+        raw = raw[:-3]
+    candidates = [
+        importer.parent / f"{raw}.ts",
+        importer.parent / raw / "index.ts",
+    ]
+    for candidate in candidates:
+        if candidate.is_file():
+            return candidate.resolve()
+    return None
+
+
+seen: set[Path] = set()
+queue: list[Path] = []
+for entry in ENTRIES:
+    path = (ROOT / entry).resolve()
+    if not path.is_file():
+        print(f"edge-import fail: missing entry {entry}", file=sys.stderr)
+        sys.exit(1)
+    queue.append(path)
+
+while queue:
+    path = queue.pop()
+    if path in seen:
+        continue
+    seen.add(path)
+    text = path.read_text()
+    if FORBIDDEN.search(text) or FORBIDDEN_ALS.search(text):
+        print(f"edge-import fail: forbidden Node import in {path.relative_to(ROOT.resolve())}", file=sys.stderr)
+        sys.exit(1)
+    for match in IMPORT_REL.finditer(text):
+        resolved = resolve_import(path, match.group(1))
+        if resolved is None:
+            print(
+                f"edge-import fail: unresolved import {match.group(1)!r} from {path.relative_to(ROOT.resolve())}",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+        if ROOT.resolve() in resolved.parents or resolved.parent == ROOT.resolve():
+            if "node_modules" not in resolved.parts:
+                queue.append(resolved)
+
+print(f"edge-import: ok ({len(seen)} modules, no forbidden Node builtins)")
+PY

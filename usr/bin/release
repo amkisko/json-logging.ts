@@ -1,0 +1,70 @@
+#!/usr/bin/env ruby
+# Publish @amkisko/json-logging to npmjs; tag so GitHub Actions can publish JSR with provenance.
+require "json"
+require "open3"
+
+root = File.expand_path("../..", __dir__)
+version, mode, *extra = ARGV
+valid = version&.match?(/\A\d+\.\d+\.\d+(?:[.-][0-9A-Za-z.-]+)?\z/)
+unless valid && [nil, "--dry-run"].include?(mode) && extra.empty?
+  warn "usage: usr/bin/release VERSION [--dry-run]"
+  exit 2
+end
+
+Dir.chdir(root)
+
+package = JSON.parse(File.read("package.json"))
+jsr = JSON.parse(File.read("jsr.json"))
+unless package["version"] == version
+  warn "version #{version} does not match package.json (#{package["version"]})"
+  exit 2
+end
+unless jsr["version"] == version
+  warn "version #{version} does not match jsr.json (#{jsr["version"]})"
+  exit 2
+end
+unless package["name"] == "@amkisko/json-logging"
+  warn "unexpected package name: #{package["name"]}"
+  exit 2
+end
+unless jsr["name"] == "@amkisko/json-logging"
+  warn "unexpected jsr package name: #{jsr["name"]}"
+  exit 2
+end
+
+def run!(*command)
+  puts command.join(" ")
+  system(*command) || exit($?.exitstatus || 1)
+end
+
+run!("make", "ci")
+run!("bun", "run", "build")
+packed, pack_status = Open3.capture2("npm", "pack", "--dry-run", "--json")
+abort "npm pack dry-run failed" unless pack_status.success?
+artifacts = JSON.parse(packed)
+abort "npm pack dry-run produced no artifact metadata" if artifacts.nil? || artifacts.empty?
+
+# Allow dirty during validation so dry-run works before the release commit.
+run!("npx", "--yes", "jsr", "publish", "--dry-run", "--allow-dirty")
+
+if mode == "--dry-run"
+  puts "release dry run: npm and jsr package @amkisko/json-logging@#{version} are valid"
+  exit
+end
+
+status, = Open3.capture2("git", "status", "--porcelain")
+abort "release requires a clean worktree" unless status.empty?
+
+print "Publish @amkisko/json-logging@#{version} to npmjs and tag for JSR CI? [Y/n] "
+answer = $stdin.gets&.chomp
+unless ["Y", "y", ""].include?(answer)
+  puts "Exiting"
+  exit 1
+end
+
+run!("npm", "publish", "--access", "public")
+run!("git", "tag", version)
+run!("git", "push", "origin", version)
+run!("gh", "release", "create", version, "--generate-notes")
+puts "published @amkisko/json-logging #{version} to npmjs"
+puts "JSR publish runs from .github/workflows/publish-jsr.yml on this tag (OIDC provenance)"

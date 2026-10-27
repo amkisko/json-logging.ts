@@ -1,0 +1,13 @@
+{
+  "artifacts": [
+    {
+      "name": "dist-js",
+      "description": "Compiled ESM JavaScript published under dist/",
+      "path_glob": "dist/**/*.js",
+      "metric": "on_disk_bytes",
+      "ceiling_bytes": 60000,
+      "baseline_bytes": 54888,
+      "max_growth_bytes": 4096
+    }
+  ]
+}

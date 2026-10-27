@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+set -euo pipefail
+root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)
+cd "$root"
+
+python3 - <<'PY'
+import json
+from pathlib import Path
+
+pkg = json.loads(Path("package.json").read_text())
+deps = pkg.get("dependencies") or {}
+optional = pkg.get("optionalDependencies") or {}
+peer = pkg.get("peerDependencies") or {}
+if deps or optional:
+    raise SystemExit(
+        "dependency audit fail: runtime/optional dependencies must stay empty "
+        f"(dependencies={deps!r}, optionalDependencies={optional!r})"
+    )
+print("dependency audit: no runtime or optional dependencies")
+if peer:
+    print(f"dependency audit: peerDependencies present (allowed): {sorted(peer)}")
+dev = pkg.get("devDependencies") or {}
+print(f"dependency audit: {len(dev)} development dependencies declared")
+PY
+
+if command -v bun >/dev/null 2>&1; then
+  bun install --frozen-lockfile >/dev/null
+  # bun audit may be unavailable on older bun; treat advisory scan as best-effort.
+  if bun pm --help 2>&1 | grep -q audit; then
+    bun pm audit || true
+  elif bun --help 2>&1 | grep -qw audit; then
+    bun audit || true
+  else
+    printf '%s\n' "dependency audit: bun audit unavailable; lockfile freeze checked"
+  fi
+fi
+
+printf '%s\n' "dependency audit: ok"

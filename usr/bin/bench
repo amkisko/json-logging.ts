@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# RFC-0002: run hot-path benchmarks and enforce usr/budgets/bench.json ceilings.
+set -euo pipefail
+root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)
+cd "$root"
+exec bun "$root/usr/reports/bench.ts"

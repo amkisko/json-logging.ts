@@ -1,0 +1,68 @@
+#!/usr/bin/env bash
+set -euo pipefail
+root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)
+work=$(mktemp -d)
+trap 'rm -rf "$work"' EXIT
+killed=0
+survived=0
+
+prepare() {
+  name=$1
+  mutant="$work/$name"
+  mkdir -p "$mutant"
+  cp -R "$root/src" "$root/tests" "$root/examples" "$mutant/"
+  cp "$root/package.json" "$root/tsconfig.json" "$root/bunfig.toml" "$root/bun.lock" "$mutant/"
+  ln -s "$root/node_modules" "$mutant/node_modules"
+}
+
+mutate() {
+  name=$1
+  path=$2
+  before=$3
+  after=$4
+  prepare "$name"
+  mutant="$work/$name"
+  python3 - "$mutant/$path" "$before" "$after" <<'PY'
+from pathlib import Path
+import sys
+path = Path(sys.argv[1])
+before, after = sys.argv[2], sys.argv[3]
+text = path.read_text()
+if before not in text:
+    raise SystemExit(f"mutation setup failed: pattern not found in {path}")
+path.write_text(text.replace(before, after, 1))
+PY
+  if (cd "$mutant" && bun test >/dev/null 2>&1); then
+    printf '%s\n' "mutation survived: $name" >&2
+    survived=$((survived + 1))
+  else
+    killed=$((killed + 1))
+  fi
+}
+
+# Invert level gate so filtered levels still emit.
+mutate level-gate \
+  src/severity.ts \
+  'return LEVEL_ORDER[requested] >= LEVEL_ORDER[configured];' \
+  'return LEVEL_ORDER[requested] < LEVEL_ORDER[configured];'
+
+# Drop sensitive-key detection.
+mutate sensitive-key \
+  src/sanitize.ts \
+  'return SENSITIVE_KEY_PATTERN.test(key);' \
+  'return false;'
+
+# Break never-throw contract on the last-resort path.
+mutate never-throw \
+  src/logger.ts \
+  '// Last resort: never throw from the log path.' \
+  'throw new Error("mutant");'
+
+# Console bridge maps warn to info (severity regression).
+mutate warn-level \
+  src/console-bridge.ts \
+  'warn: "warn",' \
+  'warn: "info",'
+
+printf '%s\n' "mutation score: $killed/4 killed"
+[ "$survived" -eq 0 ]

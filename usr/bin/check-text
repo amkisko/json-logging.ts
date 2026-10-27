@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+set -euo pipefail
+root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)
+status=0
+
+paths=()
+[ -d "$root/docs" ] && paths+=("$root/docs")
+[ -f "$root/README.md" ] && paths+=("$root/README.md")
+[ -f "$root/CHANGELOG.md" ] && paths+=("$root/CHANGELOG.md")
+[ -f "$root/AGENTS.md" ] && paths+=("$root/AGENTS.md")
+[ -f "$root/.agents/project.md" ] && paths+=("$root/.agents/project.md")
+
+if [ "${#paths[@]}" -eq 0 ]; then
+  printf '%s\n' "text: no prose files found"
+  exit 0
+fi
+
+while IFS= read -r file; do
+  relative=${file#"$root/"}
+  if grep -n $'\t' "$file" >/dev/null; then
+    printf '%s\n' "text fail: $relative contains tab characters" >&2
+    status=1
+  fi
+  if grep -n '[[:space:]]$' "$file" >/dev/null; then
+    printf '%s\n' "text fail: $relative has trailing whitespace" >&2
+    status=1
+  fi
+  if grep -nE '/Users/|/home/[a-zA-Z]' "$file" >/dev/null; then
+    printf '%s\n' "text fail: $relative contains absolute home path" >&2
+    status=1
+  fi
+done < <(find "${paths[@]}" -type f -name '*.md' | sort -u)
+
+exit "$status"

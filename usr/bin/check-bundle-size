@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+set -euo pipefail
+root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)
+budget="$root/usr/budgets/bundle.json"
+cd "$root"
+
+if [ ! -f "$budget" ]; then
+  printf '%s\n' "bundle budget missing: usr/budgets/bundle.json" >&2
+  exit 1
+fi
+
+bun run build >/dev/null
+
+python3 - "$root" "$budget" <<'PY'
+import json
+import glob
+import os
+import sys
+from datetime import datetime, timezone
+
+root, budget_path = sys.argv[1], sys.argv[2]
+doc = json.loads(open(budget_path, encoding="utf-8").read())
+status = 0
+now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+for artifact in doc.get("artifacts", []):
+    name = artifact["name"]
+    pattern = os.path.join(root, artifact["path_glob"])
+    paths = sorted(glob.glob(pattern, recursive=True))
+    if not paths:
+        print(f"bundle fail: {name} matched no files for {artifact['path_glob']}", file=sys.stderr)
+        status = 1
+        continue
+    total = sum(os.path.getsize(path) for path in paths)
+    ceiling = int(artifact["ceiling_bytes"])
+    baseline = artifact.get("baseline_bytes")
+    max_growth = artifact.get("max_growth_bytes")
+    print(
+        f"bundle: {name} metric={artifact['metric']} bytes={total} "
+        f"ceiling={ceiling} files={len(paths)} at={now}"
+    )
+    if total > ceiling:
+        print(f"bundle fail: {name} {total} bytes exceeds ceiling {ceiling}", file=sys.stderr)
+        status = 1
+    if baseline is not None and max_growth is not None:
+        growth = total - int(baseline)
+        if growth > int(max_growth):
+            print(
+                f"bundle fail: {name} grew by {growth} bytes "
+                f"(baseline {baseline}, max growth {max_growth})",
+                file=sys.stderr,
+            )
+            status = 1
+
+sys.exit(status)
+PY

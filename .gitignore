@@ -1,0 +1,35 @@
+# Dependencies
+/node_modules/
+
+# Build and publish artifacts
+/dist/
+*.tgz
+/build/
+.turbo/
+.cache/
+
+# Coverage and test output
+/coverage/
+*.lcov
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Temporary files
+/tmp/
+*.log
+*.tmp
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.cursor/mcp.json
+
+# pray local cache
+.pray

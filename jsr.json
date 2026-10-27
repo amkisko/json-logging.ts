@@ -1,0 +1,20 @@
+{
+  "name": "@amkisko/json-logging",
+  "version": "0.1.0",
+  "license": "MIT",
+  "exports": {
+    ".": "./src/index.ts",
+    "./console": "./src/console.ts",
+    "./http": "./src/http.ts",
+    "./next": "./src/next.ts",
+    "./remix": "./src/remix.ts",
+    "./hono": "./src/hono.ts",
+    "./express": "./src/express.ts",
+    "./fastify": "./src/fastify.ts",
+    "./koa": "./src/koa.ts",
+    "./bun": "./src/bun-serve.ts"
+  },
+  "publish": {
+    "include": ["LICENSE.md", "README.md", "src/**/*.ts"]
+  }
+}

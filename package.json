@@ -1,0 +1,100 @@
+{
+  "name": "@amkisko/json-logging",
+  "version": "0.1.0",
+  "description": "Structured JSON logging with ActiveSupport-style tagged and withContext helpers",
+  "type": "module",
+  "license": "MIT",
+  "sideEffects": false,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/amkisko/json-logging.ts.git"
+  },
+  "homepage": "https://github.com/amkisko/json-logging.ts#readme",
+  "bugs": {
+    "url": "https://github.com/amkisko/json-logging.ts/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "dist/**/*.js",
+    "dist/**/*.d.ts"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./console": {
+      "types": "./dist/console.d.ts",
+      "import": "./dist/console.js"
+    },
+    "./http": {
+      "types": "./dist/http.d.ts",
+      "import": "./dist/http.js"
+    },
+    "./next": {
+      "types": "./dist/next.d.ts",
+      "import": "./dist/next.js"
+    },
+    "./remix": {
+      "types": "./dist/remix.d.ts",
+      "import": "./dist/remix.js"
+    },
+    "./hono": {
+      "types": "./dist/hono.d.ts",
+      "import": "./dist/hono.js"
+    },
+    "./express": {
+      "types": "./dist/express.d.ts",
+      "import": "./dist/express.js"
+    },
+    "./fastify": {
+      "types": "./dist/fastify.d.ts",
+      "import": "./dist/fastify.js"
+    },
+    "./koa": {
+      "types": "./dist/koa.d.ts",
+      "import": "./dist/koa.js"
+    },
+    "./bun": {
+      "types": "./dist/bun-serve.d.ts",
+      "import": "./dist/bun-serve.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "bun test",
+    "test:coverage": "bun test --coverage",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "type-coverage": "type-coverage --project tsconfig.json --at-least 100 --strict",
+    "lint": "make lint",
+    "lint:biome": "make lint-biome",
+    "format": "npx --yes @biomejs/biome@2.3.8 check --write .",
+    "check": "make check",
+    "ci": "make ci",
+    "publish:npm": "npm publish --access public",
+    "publish:jsr": "npx --yes jsr publish"
+  },
+  "devDependencies": {
+    "@nestjs/common": "^12.3.2",
+    "@nestjs/core": "^12.3.2",
+    "@nestjs/platform-express": "^12.3.2",
+    "@nestjs/platform-fastify": "^12.3.2",
+    "@remix-run/node": "2",
+    "@types/bun": "^1.4.4",
+    "@types/express": "^5.0.6",
+    "@types/koa": "^3.0.3",
+    "express": "^5.3.0",
+    "fastify": "^5.12.7",
+    "hono": "^4.13.14",
+    "koa": "^3.2.1",
+    "next": "15",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.2",
+    "type-coverage": "^2.29.7",
+    "typescript": "^5.9.3"
+  }
+}

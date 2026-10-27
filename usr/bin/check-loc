@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+set -euo pipefail
+root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)
+status=0
+while IFS= read -r file; do
+  lines=$(wc -l < "$file" | tr -d ' ')
+  relative=${file#"$root/"}
+  if [ "$lines" -gt 300 ]; then
+    printf '%s\n' "LOC fail: $relative has $lines lines (maximum 300)" >&2
+    status=1
+  elif [ "$lines" -ge 150 ]; then
+    printf '%s\n' "LOC warning: $relative has $lines lines (target below 150)" >&2
+  fi
+done < <(find "$root/src" "$root/tests" "$root/usr/bin" -type f \( -name '*.ts' -o -name '*.js' -o -perm -111 \) | sort)
+exit "$status"

@@ -1,0 +1,23 @@
+name: Dependency audit
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - uses: oven-sh/setup-bun@4bc047ad259df6fc24a6c9b0f9a0cb08cf17fbe5 # v2
+        with:
+          bun-version: "1.2.9"
+
+      - name: Install
+        run: bun install --frozen-lockfile
+
+      - name: Audit dependencies
+        run: ./usr/bin/audit-dependencies

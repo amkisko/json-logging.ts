@@ -1,0 +1,46 @@
+{
+  "warm_up": 2000,
+  "runner_class": "bun-local",
+  "scenarios": [
+    {
+      "name": "disabled-debug",
+      "ceiling_ns": 50,
+      "iterations": 200000
+    },
+    {
+      "name": "string-info",
+      "ceiling_ns": 4000,
+      "iterations": 50000
+    },
+    {
+      "name": "object-info",
+      "ceiling_ns": 5000,
+      "iterations": 40000
+    },
+    {
+      "name": "error-info",
+      "ceiling_ns": 12000,
+      "iterations": 20000
+    },
+    {
+      "name": "with-context",
+      "ceiling_ns": 5000,
+      "iterations": 30000
+    },
+    {
+      "name": "redact-path",
+      "ceiling_ns": 6000,
+      "iterations": 30000
+    },
+    {
+      "name": "sticky-base-info",
+      "ceiling_ns": 8000,
+      "iterations": 30000
+    },
+    {
+      "name": "context-provider",
+      "ceiling_ns": 5000,
+      "iterations": 30000
+    }
+  ]
+}
