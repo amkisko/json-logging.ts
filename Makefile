@@ -60,7 +60,7 @@ node-smoke:
 	./usr/bin/check-node-smoke
 
 release:
-	./usr/bin/release "$(VERSION)" $(if $(DRY_RUN),--dry-run)
+	./usr/bin/release $(VERSION) $(if $(DRY_RUN),--dry-run)
 
 clean:
 	rm -rf dist coverage tmp build .turbo .cache

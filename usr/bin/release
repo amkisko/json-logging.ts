@@ -1,13 +1,38 @@
 #!/usr/bin/env ruby
 # Publish @amkisko/json-logging to npmjs; tag so GitHub Actions can publish JSR with provenance.
+# Version defaults to the first ## X.Y.Z heading in CHANGELOG.md when omitted.
 require "json"
 require "open3"
 
 root = File.expand_path("../..", __dir__)
-version, mode, *extra = ARGV
-valid = version&.match?(/\A\d+\.\d+\.\d+(?:[.-][0-9A-Za-z.-]+)?\z/)
-unless valid && [nil, "--dry-run"].include?(mode) && extra.empty?
-  warn "usage: usr/bin/release VERSION [--dry-run]"
+VERSION_PATTERN = /\A\d+\.\d+\.\d+(?:[.-][0-9A-Za-z.-]+)?\z/
+CHANGELOG_HEADING = /^##\s+(\d+\.\d+\.\d+(?:[.-][0-9A-Za-z.-]+)?)\b/
+
+def latest_changelog_version(path)
+  File.foreach(path) do |line|
+    match = line.match(CHANGELOG_HEADING)
+    return match[1] if match
+  end
+  nil
+end
+
+args = ARGV.dup
+dry_run = args.delete("--dry-run")
+version = args.shift
+unless args.empty?
+  warn "usage: usr/bin/release [VERSION] [--dry-run]"
+  exit 2
+end
+
+version = nil if version && version.empty?
+if version.nil?
+  version = latest_changelog_version(File.join(root, "CHANGELOG.md"))
+  if version.nil?
+    warn "no version heading found in CHANGELOG.md (expected ## X.Y.Z)"
+    exit 2
+  end
+elsif !version.match?(VERSION_PATTERN)
+  warn "usage: usr/bin/release [VERSION] [--dry-run]"
   exit 2
 end
 
@@ -47,7 +72,7 @@ abort "npm pack dry-run produced no artifact metadata" if artifacts.nil? || arti
 # Allow dirty during validation so dry-run works before the release commit.
 run!("npx", "--yes", "jsr", "publish", "--dry-run", "--allow-dirty")
 
-if mode == "--dry-run"
+if dry_run
   puts "release dry run: npm and jsr package @amkisko/json-logging@#{version} are valid"
   exit
 end

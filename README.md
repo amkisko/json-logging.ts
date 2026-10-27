@@ -218,11 +218,12 @@ make check
 Release:
 
 ```bash
+make release
+make release DRY_RUN=1
 make release VERSION=0.1.0
-make release VERSION=0.1.0 DRY_RUN=1
 ```
 
-`make release` runs quality gates, publishes to npmjs, pushes a version tag, and leaves JSR publishing to GitHub Actions (OIDC provenance). Keep `package.json` and `jsr.json` version fields in sync before release. Create the `@amkisko` scope and `json-logging` package on [jsr.io](https://jsr.io/new), then link this GitHub repository in the JSR package settings so tag publishes can authenticate.
+`make release` reads the first `## X.Y.Z` heading in `CHANGELOG.md`, runs quality gates, publishes to npmjs, pushes a version tag, and leaves JSR publishing to GitHub Actions (OIDC provenance). Optional `VERSION=` overrides the changelog heading. Keep `package.json` and `jsr.json` version fields in sync before release. Create the `@amkisko` scope and `json-logging` package on [jsr.io](https://jsr.io/new), then link this GitHub repository in the JSR package settings so tag publishes can authenticate.
 
 Quality scripts live under `usr/bin/` (same layout as other amkisko libraries). Bundle ceilings are in `usr/budgets/bundle.json`. Product-facing notes live in `CHANGELOG.md`; engineering drafts under `docs/changelogs/`.
 

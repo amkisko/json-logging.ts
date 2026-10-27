@@ -6,6 +6,6 @@
 - Prefer `AsyncLocalStorage` for request/context tags when the runtime exposes it via `process.getBuiltinModule`; soft-load so browsers and Workers without Node builtins can still import for basic logging. Edge-safe sinks must fall back without crashing.
 - Do not add pino/winston/bunyan as dependencies; this package is the thin structured layer.
 - Fact-check ecosystem claims before README assertions; record evidence under `docs/`.
-- Release with `make release VERSION=x.y.z` (`usr/bin/release`); dry-run with `DRY_RUN=1`. Publishes npmjs locally and tags for JSR GitHub Actions provenance publish; keep `package.json` and `jsr.json` versions aligned.
+- Release with `make release` (`usr/bin/release`); version from the first `## X.Y.Z` in `CHANGELOG.md`, optional `VERSION=` override; dry-run with `DRY_RUN=1`. Publishes npmjs locally and tags for JSR GitHub Actions provenance publish; keep `package.json` and `jsr.json` versions aligned.
 - JSR package settings: description from `package.json`; mark Node.js, Bun, Deno, Cloudflare Workers, and Browsers compatible (ALS only where builtins exist).
 
