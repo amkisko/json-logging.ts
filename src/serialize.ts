@@ -1,6 +1,13 @@
 import { peekLogStore } from "./context.js";
 import { isPlainObject, readObjectField } from "./objects.js";
-import { applyCompiledRedactPaths, applyRedactPaths, type CompiledRedactPath } from "./redact.js";
+import {
+  applyCompiledRedact,
+  applyCompiledRedactPaths,
+  applyRedactPaths,
+  type CompiledRedact,
+  type CompiledRedactPath,
+  hasRedactWork,
+} from "./redact.js";
 import {
   prepareTags,
   sanitizeError,
@@ -81,10 +88,17 @@ export type BuildLineInput = {
   preparedTags?: boolean;
   clock?: () => Date;
   redact?: readonly string[];
-  compiledRedact?: readonly CompiledRedactPath[];
+  /** Precompiled path list (RFC-0002) or full plan (RFC-0005). */
+  compiledRedact?: readonly CompiledRedactPath[] | CompiledRedact;
   serializers?: Readonly<Record<string, FieldSerializer>>;
   contextProvider?: ContextProvider;
 };
+
+function isCompiledRedactPlan(
+  value: readonly CompiledRedactPath[] | CompiledRedact
+): value is CompiledRedact {
+  return !Array.isArray(value) && typeof value === "object" && value !== null && "replace" in value;
+}
 
 function applySerializers(
   payload: Record<string, unknown>,
@@ -195,9 +209,15 @@ export function buildRecord(input: BuildLineInput): LogRecord {
     }
   }
 
-  if (input.compiledRedact && input.compiledRedact.length > 0) {
-    const redacted = applyCompiledRedactPaths(payload, input.compiledRedact);
-    if (isPlainObject(redacted)) {
+  if (input.compiledRedact) {
+    const redacted = isCompiledRedactPlan(input.compiledRedact)
+      ? hasRedactWork(input.compiledRedact)
+        ? applyCompiledRedact(payload, input.compiledRedact)
+        : payload
+      : input.compiledRedact.length > 0
+        ? applyCompiledRedactPaths(payload, input.compiledRedact)
+        : payload;
+    if (redacted !== payload && isPlainObject(redacted)) {
       for (const key of Object.keys(payload)) {
         delete payload[key];
       }

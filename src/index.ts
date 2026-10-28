@@ -20,8 +20,9 @@ export {
   getBridgeOriginals,
   isInBridge,
 } from "./console-state.js";
-export type { AlsConstructor, AlsInstance, ContextFields } from "./context.js";
+export type { AlsConstructor, AlsInstance, ContextFields, ContextStore } from "./context.js";
 export {
+  configureContextStorage,
   getBlockTags,
   getContext,
   isAsyncLocalStorageAvailable,
@@ -30,11 +31,14 @@ export {
 } from "./context.js";
 export { createLogger, JsonLogging } from "./json-logging.js";
 export { Logger } from "./logger.js";
-export type { CompiledRedactPath } from "./redact.js";
+export type { CompiledRedact, CompiledRedactPath } from "./redact.js";
 export {
+  applyCompiledRedact,
   applyCompiledRedactPaths,
   applyRedactPaths,
+  compileRedact,
   compileRedactPaths,
+  hasRedactWork,
 } from "./redact.js";
 export {
   isSensitiveKey,
@@ -68,6 +72,8 @@ export type {
   LoggerOptions,
   LogMessage,
   LogRecord,
+  RedactCensor,
+  RedactOptions,
   SeverityName,
   Sink,
 } from "./types.js";

@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, test } from "bun:test";
 import {
   getContext,
   resetContextStorageForTests,
+  setAlsConstructorForTests,
   setAlsOverrideForTests,
   withContext,
 } from "../src/context.js";
@@ -9,6 +10,7 @@ import { createLogger, JsonLogging } from "../src/json-logging.js";
 import { capturingSink, fixedClock, parseLine } from "./helpers.js";
 
 beforeEach(() => {
+  setAlsConstructorForTests(undefined);
   setAlsOverrideForTests(undefined);
   resetContextStorageForTests();
 });

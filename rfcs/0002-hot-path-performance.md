@@ -104,7 +104,7 @@ ActiveSupport-style tagged loggers with never-raise formatters. JSON lines to st
 ## Unresolved questions
 
 - Exact iteration count and warm-up for CI stability on GitHub runners.
-- Whether `redact` accepts `{ paths, censor }` in this RFC or a follow-up.
+- Whether `redact` accepts `{ paths, censor }` in this RFC or a follow-up. (Settled in RFC-0005.)
 - Whether serializers run on nested paths or only root keys (this RFC: root keys only).
 
 ## Future possibilities

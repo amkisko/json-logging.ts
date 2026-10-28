@@ -1,10 +1,13 @@
 /** Key/value fields stored in the ambient request context. */
 export type ContextFields = Record<string, unknown>;
 
-type Store = {
+/** ALS store shape for {@link configureContextStorage} and ambient helpers. */
+export type ContextStore = {
   context: ContextFields;
   tags: string[];
 };
+
+type Store = ContextStore;
 
 /** Minimal ALS surface used for request/block context (run + getStore only). */
 export type AlsInstance<T> = {
@@ -75,9 +78,24 @@ function loadAlsConstructor(): AlsConstructor | undefined {
   return undefined;
 }
 
-/** True when this runtime can construct AsyncLocalStorage for ambient context. */
+/** True when ambient context can use AsyncLocalStorage (injected or soft-loaded). */
 export function isAsyncLocalStorageAvailable(): boolean {
+  if (alsOverride !== undefined && alsOverride !== null) {
+    return true;
+  }
+  if (alsOverride === null) {
+    return false;
+  }
   return loadAlsConstructor() !== undefined;
+}
+
+/**
+ * Inject an AsyncLocalStorage instance for ambient `withContext` / block `tagged`
+ * when soft-load via `process.getBuiltinModule` is unavailable (for example Workers
+ * that import `node:async_hooks` directly). Pass `null` to clear and restore soft-load.
+ */
+export function configureContextStorage(storage: AlsInstance<ContextStore> | null): void {
+  alsOverride = storage === null ? undefined : storage;
 }
 
 /** Test helper: force ALS constructor resolution (`null` = unavailable). */

@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 0.2.0 (2026-10-28)
+
+- Extend `redact` with key names and censor modes (`filtered`, `remove`, `hash`, or a function)
+- Add `configureContextStorage` so hosts can inject AsyncLocalStorage for ambient context
+
 ## 0.1.1 (2026-10-27)
 
 - Document remaining public symbols so JSR docs coverage clears the score threshold

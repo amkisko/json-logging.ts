@@ -25,3 +25,4 @@ Off. RFCs MAY name repository paths a reviewer can open. Prefer another RFC for 
 | 0002 | hot-path-performance | Experimental | Hot-path performance, redact paths, serializers, benchmarks |
 | 0003 | http-adapters | Experimental | Shared HTTP request context and framework subpath adapters |
 | 0004 | context-provider-and-request-completion | Experimental | Context provider, request completion line, header allowlist |
+| 0005 | redact-censor-and-context-storage | Experimental | Redact keys and censor modes, injectable ALS |

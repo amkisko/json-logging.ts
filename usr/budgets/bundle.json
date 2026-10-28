@@ -5,8 +5,8 @@
       "description": "Compiled ESM JavaScript published under dist/",
       "path_glob": "dist/**/*.js",
       "metric": "on_disk_bytes",
-      "ceiling_bytes": 60000,
-      "baseline_bytes": 54888,
+      "ceiling_bytes": 66000,
+      "baseline_bytes": 61890,
       "max_growth_bytes": 4096
     }
   ]

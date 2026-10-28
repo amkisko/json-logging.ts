@@ -1,5 +1,5 @@
 import { withBlockTags } from "./context.js";
-import { type CompiledRedactPath, compileRedactPaths } from "./redact.js";
+import { type CompiledRedact, compileRedact, hasRedactWork } from "./redact.js";
 import { prepareTags, sanitizeHash } from "./sanitize.js";
 import { buildFallbackRecord, buildRecord, toJsonLine } from "./serialize.js";
 import { isEnabled } from "./severity.js";
@@ -10,11 +10,26 @@ import type {
   Level,
   LoggerOptions,
   LogMessage,
+  RedactOptions,
   Sink,
 } from "./types.js";
 
 function isCallback(value: unknown): value is () => unknown {
   return typeof value === "function";
+}
+
+function isRedactOptions(value: readonly string[] | RedactOptions): value is RedactOptions {
+  return !Array.isArray(value);
+}
+
+function redactPathsFrom(input: readonly string[] | RedactOptions | undefined): string[] {
+  if (input === undefined) {
+    return [];
+  }
+  if (isRedactOptions(input)) {
+    return input.paths ? [...input.paths] : [];
+  }
+  return [...input];
 }
 
 /** Structured logger: severity methods, sticky tags, child loggers, never-raise emit path. */
@@ -29,13 +44,14 @@ export class Logger {
   readonly clock?: () => Date;
   /** Sticky tags from construction or {@link Logger.tagged}. */
   readonly tags: readonly string[];
-  /** Configured redact paths (dot notation). */
+  /** Configured redact paths (dot notation); empty when only keys are set. */
   readonly redact: readonly string[];
   /** Root-field serializers. */
   readonly serializers: Readonly<Record<string, FieldSerializer>>;
   /** Optional ambient context provider. */
   readonly contextProvider?: ContextProvider;
-  private readonly compiledRedact: readonly CompiledRedactPath[];
+  private readonly redactSource: readonly string[] | RedactOptions | undefined;
+  private readonly compiledRedact: CompiledRedact;
 
   constructor(options: LoggerOptions = {}) {
     this.level = options.level ?? "info";
@@ -43,10 +59,11 @@ export class Logger {
     this.base = options.base ? sanitizeHash(options.base) : {};
     this.clock = options.clock;
     this.tags = options.tags ? prepareTags(options.tags) : [];
-    this.redact = options.redact ? [...options.redact] : [];
+    this.redactSource = options.redact;
+    this.redact = redactPathsFrom(options.redact);
     this.serializers = options.serializers ? { ...options.serializers } : {};
     this.contextProvider = options.contextProvider;
-    this.compiledRedact = compileRedactPaths(this.redact);
+    this.compiledRedact = compileRedact(options.redact);
   }
 
   /** True when a message at `level` would be emitted. */
@@ -86,7 +103,7 @@ export class Logger {
       sink: this.sink,
       clock: this.clock,
       tags: this.tags,
-      redact: this.redact,
+      redact: this.redactSource,
       serializers: this.serializers,
       contextProvider: this.contextProvider,
       base: { ...this.base, ...sanitizeHash(bindings) },
@@ -120,7 +137,7 @@ export class Logger {
       sink: this.sink,
       clock: this.clock,
       base: this.base,
-      redact: this.redact,
+      redact: this.redactSource,
       serializers: this.serializers,
       contextProvider: this.contextProvider,
       tags: [...this.tags, ...tags],
@@ -140,7 +157,7 @@ export class Logger {
         preparedBase: true,
         preparedTags: true,
         clock: this.clock,
-        compiledRedact: this.compiledRedact,
+        compiledRedact: hasRedactWork(this.compiledRedact) ? this.compiledRedact : undefined,
         serializers: this.serializers,
         contextProvider: this.contextProvider,
       });

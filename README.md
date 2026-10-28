@@ -2,7 +2,7 @@
 
 Structured JSON logging for Bun, Node, Deno, Next.js, and Remix. The portable API follows the Ruby `activesupport-json_logging` gem style: create a logger, call severity methods, use `tagged` and `withContext`, and emit one JSON object per line.
 
-Zero runtime dependencies. Ambient `withContext` / block `tagged` use AsyncLocalStorage when the runtime exposes it through `process.getBuiltinModule("async_hooks")` (Node, Bun, Deno with Node builtins, Cloudflare Workers with `nodejs_compat`). The package never statically imports `node:async_hooks`, so browsers and Workers without Node builtins can still import and emit basic JSON lines; ambient context is a no-op there. Call `isAsyncLocalStorageAvailable()` to detect ALS. Helpers under `@amkisko/json-logging/next` and `@amkisko/json-logging/remix` use Web APIs and do not add framework packages as runtime dependencies.
+Zero runtime dependencies. Ambient `withContext` / block `tagged` use AsyncLocalStorage when the runtime exposes it through `process.getBuiltinModule("async_hooks")` (Node, Bun, Deno with Node builtins, Cloudflare Workers with `nodejs_compat`). The package never statically imports `node:async_hooks`, so browsers and Workers without Node builtins can still import and emit basic JSON lines; ambient context is a no-op there. On Workers that import `AsyncLocalStorage` from `node:async_hooks` themselves, call `configureContextStorage(new AsyncLocalStorage())` once at boot. Call `isAsyncLocalStorageAvailable()` to detect ALS. Helpers under `@amkisko/json-logging/next` and `@amkisko/json-logging/remix` use Web APIs and do not add framework packages as runtime dependencies.
 
 ## Runtime compatibility
 
@@ -11,7 +11,7 @@ Zero runtime dependencies. Ambient `withContext` / block `tagged` use AsyncLocal
 | Node.js | Compatible | Primary target; ALS context works. |
 | Bun | Compatible | Tested in CI; `@amkisko/json-logging/bun` for `Bun.serve`. |
 | Deno | Compatible | ALS via Deno Node builtins (`getBuiltinModule`). |
-| Cloudflare Workers | Compatible | Full ALS with `nodejs_compat`. Without it: import and basic logging still work; `withContext` does not retain fields. |
+| Cloudflare Workers | Compatible | Full ALS with `nodejs_compat` (soft-load or `configureContextStorage`). Without it: import and basic logging still work; `withContext` does not retain fields unless you inject ALS. |
 | Browsers | Compatible | Basic logging and sinks work. Ambient context requires a host that provides ALS (unusual in browsers). |
 
 On the JSR package settings page, mark Node.js, Bun, Deno, Cloudflare Workers, and Browsers as compatible. Keep the package description aligned with `package.json` (`JSR_TOKEN=... ./usr/bin/sync-jsr-settings`, or set it in the Settings tab).
@@ -64,12 +64,17 @@ Each line looks like:
 
 Object fields merge at the root. Tags appear as `tags`. Request fields appear under `context`. System keys (`tags`, `severity`, `timestamp`, `message`, `context`) are reserved.
 
-Optional hot-path helpers (RFC-0002):
+Optional hot-path helpers (RFC-0002, RFC-0005):
 
 ```ts
 const logger = createLogger({
   level: "info",
-  redact: ["user.password", "headers.authorization"],
+  redact: {
+    paths: ["user.password", "headers.authorization"],
+    keys: ["ssn", "apiKey"],
+    caseInsensitive: true,
+    censor: "hash", // or "filtered" | "remove" | (value) => unknown
+  },
   serializers: {
     err: (value) => value, // root-field transform
   },
@@ -79,6 +84,8 @@ if (logger.isLevelEnabled("debug")) {
   logger.debug({ detail: "expensive" });
 }
 ```
+
+Path-only form `redact: ["user.password"]` still applies `[FILTERED]`.
 
 ## Sinks
 
