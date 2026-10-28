@@ -6,7 +6,32 @@ require "open3"
 
 root = File.expand_path("../..", __dir__)
 VERSION_PATTERN = /\A\d+\.\d+\.\d+(?:[.-][0-9A-Za-z.-]+)?\z/
-CHANGELOG_HEADING = /^##\s+(\d+\.\d+\.\d+(?:[.-][0-9A-Za-z.-]+)?)\b/
+CHANGELOG_HEADING = /^##\s+\[?(\d+\.\d+\.\d+(?:[.-][0-9A-Za-z.-]+)?)\]?\b/
+
+def require_changelog_version!(version, path: "CHANGELOG.md")
+  red = "\033[1;31m"
+  nc = "\033[0m"
+  unless File.file?(path)
+    abort "#{red}release requires #{path} with a ## #{version} heading#{nc}"
+  end
+  ok = File.foreach(path).any? do |line|
+    next false if line.match?(/Unreleased/i)
+
+    rest = line[/^\#\#\s+(.*)/, 1]
+    next false unless rest
+
+    rest = rest.strip
+    if rest.start_with?("[")
+      rest[/\A\[([^\]]+)\]/, 1] == version
+    else
+      rest == version || rest.start_with?("#{version} ", "#{version}(")
+    end
+  end
+  unless ok
+    abort "#{red}release requires #{path} to include a version heading for #{version} " \
+          "(e.g. ## #{version} or ## [#{version}])#{nc}"
+  end
+end
 
 def latest_changelog_version(path)
   File.foreach(path) do |line|
@@ -37,6 +62,7 @@ elsif !version.match?(VERSION_PATTERN)
 end
 
 Dir.chdir(root)
+require_changelog_version!(version)
 
 package = JSON.parse(File.read("package.json"))
 jsr = JSON.parse(File.read("jsr.json"))
